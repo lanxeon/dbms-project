@@ -31,6 +31,8 @@ public class gameDB {
 	static String InsStats="update stats set maxhp=maxhp+?,maxmp=maxmp+?,phys_attack=phys_attack+?,magic_attack=magic_attack+?,defence=defence+?,"
 			+ "recovery=recovery+?,mobility=mobility+? ";
 	static String ShowPlayers="select * from player";
+	static String updateStats="update stats set maxhp=maxhp+?, maxmp=maxmp+?, phys_attack=phys_attack+?, magic_attack=magic_attack+?,"
+			+ "defence=defence+?,recovery=recovery+?,mobility=mobility+? where pid=?";
 	
 	//cin is global input using object
 	static Scanner cin=new Scanner(System.in);
@@ -168,6 +170,7 @@ public class gameDB {
 		cid=rs.getInt("classid");
 		stmt.execute("insert into stats(pid) values ("+pid+")");
 		
+		
 		switch(cid)
 		{
 		case 1: updateStatsByTitan();
@@ -180,6 +183,26 @@ public class gameDB {
 		break;
 		default: System.out.println("Enter Valid class");
 		}
+		
+		insLevel(lvl,pid);
+		
+	}
+	
+	//function for changing stats by level
+	public static void insLevel(int lvl1,int pid1) throws SQLException
+	{
+		int increaseInStats=(lvl1-1)*2;
+		System.out.println("This is an increase of "+increaseInStats);
+		pstmt=con.prepareStatement(updateStats);
+		pstmt.setInt(1, increaseInStats);
+		pstmt.setInt(2, increaseInStats);
+		pstmt.setInt(3, increaseInStats);
+		pstmt.setInt(4, increaseInStats);
+		pstmt.setInt(5, increaseInStats);
+		pstmt.setInt(6, increaseInStats);
+		pstmt.setInt(7, increaseInStats);
+		pstmt.setInt(8, pid1);
+		pstmt.execute();
 	}
 	
 	//Functions for Changing stats by classes
@@ -956,7 +979,6 @@ public class gameDB {
 		
 		pstmt.executeUpdate();
 	}
-	
 }
 
 //SELECT playerid,level,cname,wname,aname, maxhp, maxmp, phys_attack, magic_attack, defence, recovery,mobility

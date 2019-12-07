@@ -1,3 +1,5 @@
+package gameModel;
+
 //select username,cname as 'class',wname as 'weapon',aname as 'armour' from player,class,weapons,armour where classid=cid and armourid=aid and weaponid=wid
 //ignore. Above is only for future reference
 
@@ -13,21 +15,24 @@ public class gameDB {
 	//GLOBAL VARIABLES TO BE USED IN THE ENTIRE PROGRAM
 	
 	//jdbc variables
-	static Connection con = null;
-	static ResultSet rs=null;
-	static Statement stmt=null;
-	static PreparedStatement pstmt=null;
+	public static Connection con = null;
+	public static ResultSet rs=null;
+	public static Statement stmt=null;
+	public static PreparedStatement pstmt=null;
 	
 	//misc variables
-	static int hp,mp,patk,matk,def,mob,rec;//stats
-	static int pid,cid,wid,aid,lvl;//player, class, weapon, armour ids and level
-	static String usn="";//player username
+	public static int hp,mp,patk,matk,def,mob,rec;//stats
+	public static int pid,cid,wid,aid,lvl;//player, class, weapon, armour ids and level
+	public static String usn="";//player username
 
 	//common queries which will be repeated during the entirety of the program
-	static String InsPlayer="insert into player(username,level,classid,weaponid,armourid) values (?,?,?,?,?)";
+	static String InsPlayer="insert into player(username,level,classid) values (?,?,?)";
+	static String InsPlayer1="update player set weaponid=?, armourid=? where playerid=?";
 	static String InsStats="update stats set maxhp=maxhp+?,maxmp=maxmp+?,phys_attack=phys_attack+?,magic_attack=magic_attack+?,defence=defence+?,"
 			+ "recovery=recovery+?,mobility=mobility+? ";
 	static String ShowPlayers="select * from player";
+	static String updateStats="update stats set maxhp=maxhp+?, maxmp=maxmp+?, phys_attack=phys_attack+?, magic_attack=magic_attack+?,"
+			+ "defence=defence+?,recovery=recovery+?,mobility=mobility+? where pid=?";
 	
 	//cin is global input using object
 	static Scanner cin=new Scanner(System.in);
@@ -69,21 +74,21 @@ public class gameDB {
 	/*
 	 * Armour Stats
 	 * 
-	1	transcendance: patk+20,def+15,recovery+20,sp+10
-	2	iron will: patk+10,def+40, mobility-10,recovery+10,sp+20
-	3	armamentarium: patk+15,def+15,mobility+5,recovery+5, sp+15
-	4	hyperion:patk+30,matk+20, mobility+15,sp+15
-	5	hallowfire:patk+20,mobility+15,recovery+20,sp+25
-	6	actium:patk+10,mobility+10,recovery+10,def+15,sp+20
-	7	shadow stepper:patk+15,matk+10,mobility+40,sp+20
-	8	dreambane:patk+15,matk+10, recovery+40,sp+30
-	9	ophidia spathe:def+15, recovery+25, mobility+25, sp+25
-	10	chromatic fire:matk+35,sp+15 recovery+25
-	11	phoenix protocol:matk+50, recovery+10,mobility-10
-	12	Sanguine Alchemy:matk+20,recovery+15,sp+30,mobility+5
+	1	transcendance: patk+20,def+15,recovery+20,sp+10,hp+45
+	2	iron will: patk+10,def+40, mobility-10,recovery+10,sp+20,hp+25
+	3	armamentarium: patk+15,def+15,mobility+5,recovery+5, sp+15,hp+35
+	4	hyperion:patk+30,matk+20, mobility+15,sp+15,hp+20
+	5	hallowfire:patk+20,mobility+15,recovery+20,sp+25,hp+25
+	6	actium:patk+10,mobility+10,recovery+10,def+15,sp+20,hp+15
+	7	shadow stepper:patk+15,matk+10,mobility+40,sp+20,hp+10
+	8	dreambane:patk+15,matk+10, recovery+40,sp+30,hp+30
+	9	ophidia spathe:def+15, recovery+25, mobility+25, sp+25,hp+20
+	10	chromatic fire:matk+35,sp+15 recovery+25, hp+10
+	11	phoenix protocol:matk+50, recovery+10,mobility-10,hp+15
+	12	Sanguine Alchemy:matk+20,recovery+15,sp+30,mobility+5, hp+15
 	 */
 	
-	
+/*Commenting out main function as it is better to have an initialization for class with static stuff through constructor
 	public static void main(String[] args) 
 	{
 		
@@ -113,37 +118,58 @@ public class gameDB {
 		}
 		
 	}
+*/
+	
+	
+	
+	//Constructor Definition
+	public gameDB()
+	{
+		try {
+			
+			Class.forName("com.mysql.jdbc.Driver");
+			con=DriverManager.getConnection("jdbc:mysql://localhost:3306/game","root","");
+			
+			con.setAutoCommit(false);
+			
+			stmt=con.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			
+			}
+			catch(ClassNotFoundException e) 
+			{
+				e.printStackTrace();
+			}
+			catch(SQLException e) 
+			{
+				e.printStackTrace();
+			}
+	}
+	
+	
+	
 	
 	//Function for inserting a player. Also subsequently inserts a tuple into the stats table with pid same as playerid of the newly
 	//inserted player.(Make sure you enter values just for checking insertion working then set autoincrement back to 1 for player table.
-	public static void insPlayer() throws SQLException
+	//part 1 of insert
+	public static void insPlayer(String usn1, int lvl1, int cid1) throws SQLException
 	{
-		System.out.print("Username:");
-		usn = cin.nextLine();
-		System.out.print("Level:");
-		lvl = cin.nextInt();
-		System.out.print("Class:");
-		cid = cin.nextInt();
-		System.out.print("Weapon:");
-		wid = cin.nextInt();
-		System.out.print("armour:");
-		aid = cin.nextInt();
+		usn = usn1;
+		lvl = lvl1;
+		cid = cid1;
+		
 		
 		pstmt=con.prepareStatement(InsPlayer);
 		pstmt.setString(1, usn);
 		pstmt.setInt(2, lvl);
 		pstmt.setInt(3, cid);
-		pstmt.setInt(4, wid);
-		pstmt.setInt(5, aid);
 		pstmt.execute();
 		
 		rs=stmt.executeQuery("select * from player where playerid=(select max(playerid) from player)");
 		rs.next();
 		pid=rs.getInt(1);
 		cid=rs.getInt("classid");
-		wid=rs.getInt("weaponid");
-		aid=rs.getInt("armourid");
 		stmt.execute("insert into stats(pid) values ("+pid+")");
+		
 		
 		switch(cid)
 		{
@@ -158,8 +184,25 @@ public class gameDB {
 		default: System.out.println("Enter Valid class");
 		}
 		
-		equipWeapon(pid,wid);
-		equipArmour(pid,aid);
+		insLevel(lvl,pid);
+		
+	}
+	
+	//function for changing stats by level
+	public static void insLevel(int lvl1,int pid1) throws SQLException
+	{
+		int increaseInStats=(lvl1-1)*2;
+		System.out.println("This is an increase of "+increaseInStats);
+		pstmt=con.prepareStatement(updateStats);
+		pstmt.setInt(1, increaseInStats);
+		pstmt.setInt(2, increaseInStats);
+		pstmt.setInt(3, increaseInStats);
+		pstmt.setInt(4, increaseInStats);
+		pstmt.setInt(5, increaseInStats);
+		pstmt.setInt(6, increaseInStats);
+		pstmt.setInt(7, increaseInStats);
+		pstmt.setInt(8, pid1);
+		pstmt.execute();
 	}
 	
 	//Functions for Changing stats by classes
@@ -260,6 +303,28 @@ public class gameDB {
 		pstmt.executeUpdate();
 	}
 	
+	//Part 2 of insert
+	public static void insWeaponAndArmour(int wid1, int aid1) throws SQLException
+	{
+		rs=stmt.executeQuery("select playerid from player where playerid=(select max(playerid) from player)");
+		rs.next();
+		pid=rs.getInt(1);
+		
+        wid = wid1;
+		aid = aid1;
+		
+		pstmt=con.prepareStatement(InsPlayer1);
+		pstmt.setInt(1, wid);
+		pstmt.setInt(2, aid);
+		pstmt.setInt(3, pid);
+		pstmt.execute();
+		
+		equipWeapon(pid,wid);
+		equipArmour(pid,aid);
+	}
+	
+	
+	
 	
 	//function for equipping weapons
 	public static void equipWeapon(int pid,int wid) throws SQLException
@@ -275,18 +340,7 @@ public class gameDB {
 			def=0;
 			rec=0;
 			mob=5;
-			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
+		
 			break;
 			
 		//2.shadowsteel: patck+65,mp+5,mobility-5
@@ -298,18 +352,7 @@ public class gameDB {
 			def=0;
 			rec=0;
 			mob=-5;
-			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
+
 			break;
 		
 		//3.battleaxe: patck+50,recovery+10
@@ -321,18 +364,7 @@ public class gameDB {
 			def=0;
 			rec=10;
 			mob=0;
-			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
+
 			break;
 		
 		//4.Duke mk: patk+30, mobility+5, mp+10
@@ -344,18 +376,7 @@ public class gameDB {
 			def=0;
 			rec=10;
 			mob=5;
-			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
+
 			break;
 		
 		//5.smg: patk+15,mobility+15
@@ -367,18 +388,7 @@ public class gameDB {
 			def=0;
 			rec=0;
 			mob=15;
-			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
+
 			break;
 	
 		//6.Shotgun: patk+40, mobility-5,mp+10
@@ -390,18 +400,7 @@ public class gameDB {
 			def=0;
 			rec=0;
 			mob=-5;
-			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
+
 			break;
 			
 		//7.dagger:patk+25,magatk+15,mobility+15
@@ -413,18 +412,7 @@ public class gameDB {
 			def=0;
 			rec=0;
 			mob=15;
-			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
+
 			break;
 			
 		//8.blade:patk+15,magatk+25,mobility+15
@@ -436,18 +424,7 @@ public class gameDB {
 			def=0;
 			rec=0;
 			mob=15;
-			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
+
 			break;
 			
 		//9.HiddenBlade: patk+10, matk+10,mobility+25,recovery+10
@@ -459,18 +436,7 @@ public class gameDB {
 			def=0;
 			rec=10;
 			mob=25;
-			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
+
 			break;
 			
 		//10.wand:spatk+20, recovery+35, mobility+10
@@ -482,18 +448,7 @@ public class gameDB {
 			def=0;
 			rec=35;
 			mob=10;
-			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
+
 			break;
 			
 		//11.staff:spatk+45, recovery+10
@@ -506,17 +461,6 @@ public class gameDB {
 			rec=10;
 			mob=0;
 			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
 			break;
 			
 		//12.spellcaster: spatk+30, mobility+15, recovery+15
@@ -529,31 +473,353 @@ public class gameDB {
 			rec=15;
 			mob=15;
 			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
 			break;
+		default: break;
 		}
+		
+		pstmt=con.prepareStatement(InsStats+"where pid="+pid);
+		pstmt.setInt(1, hp);
+		pstmt.setInt(2, mp);
+		pstmt.setInt(3, patk);
+		pstmt.setInt(4, matk);
+		pstmt.setInt(5, def);
+		pstmt.setInt(6, rec);
+		pstmt.setInt(7, mob);		
+		
+		pstmt.executeUpdate();
 	}
 	
 	
 	//function for equipping armour
 	public static void equipArmour(int pid, int wid) throws SQLException
 	{
+		switch(wid)
+		{
+		//1	transcendance: patk+20,def+15,recovery+20,sp+10,hp+45
+		case 1:
+			hp=45;
+			mp=10;
+			patk=20;
+			matk=0;
+			def=15;
+			rec=20;
+			mob=0;
 		
+			break;
+			
+		//2	iron will: patk+10,def+40, mobility-10,recovery+10,sp+20, hp+25
+		case 2:
+			hp=25;
+			mp=20;
+			patk=10;
+			matk=0;
+			def=40;
+			rec=10;
+			mob=-10;
+
+			break;
+		
+		//3	armamentarium: patk+15,def+15,mobility+5,recovery+5, sp+15,hp+35
+		case 3:
+			hp=35;
+			mp=15;
+			patk=15;
+			matk=0;
+			def=15;
+			rec=5;
+			mob=5;
+
+			break;
+		
+		//4	hyperion:patk+30,matk+20, mobility+15,sp+15,hp+20
+		case 4:
+			hp=20;
+			mp=15;
+			patk=30;
+			matk=20;
+			def=0;
+			rec=0;
+			mob=15;
+
+			break;
+		
+		//5	hallowfire:patk+20,mobility+15,recovery+20,sp+25,hp+25
+		case 5:
+			hp=25;
+			mp=25;
+			patk=20;
+			matk=0;
+			def=0;
+			rec=20;
+			mob=15;
+
+			break;
+	
+		//6	actium:patk+10,mobility+10,recovery+10,def+15,sp+20,hp+15
+		case 6:
+			hp=15;
+			mp=20;
+			patk=10;
+			matk=0;
+			def=15;
+			rec=10;
+			mob=10;
+
+			break;
+			
+		//7	shadow stepper:patk+15,matk+10,mobility+40,sp+20,hp+10
+		case 7:
+			hp=10;
+			mp=20;
+			patk=15;
+			matk=10;
+			def=0;
+			rec=0;
+			mob=40;
+
+			break;
+			
+		//8	dreambane:patk+15,matk+10, recovery+40,sp+30,hp+30
+		case 8:
+			hp=30;
+			mp=30;
+			patk=15;
+			matk=10;
+			def=0;
+			rec=40;
+			mob=0;
+
+			break;
+			
+		//9	ophidia spathe:def+15, recovery+25, mobility+25, sp+25,hp+20
+		case 9:
+			hp=20;
+			mp=25;
+			patk=0;
+			matk=0;
+			def=15;
+			rec=25;
+			mob=25;
+
+			break;
+			
+		//10	chromatic fire:matk+35,sp+15 recovery+25, hp+10
+		case 10:
+			hp=10;
+			mp=15;
+			patk=0;
+			matk=35;
+			def=0;
+			rec=25;
+			mob=0;
+
+			break;
+			
+		//11	phoenix protocol:matk+50, recovery+10,mobility-10,hp+15
+		case 11:
+			hp=15;
+			mp=50;
+			patk=0;
+			matk=0;
+			def=0;
+			rec=10;
+			mob=-10;
+			
+			break;
+			
+		//12	Sanguine Alchemy:matk+20,recovery+15,sp+30,mobility+5, hp+15
+		case 12:
+			hp=15;
+			mp=30;
+			patk=0;
+			matk=20;
+			def=0;
+			rec=15;
+			mob=5;
+			
+			break;
+		default: break;
+		}
+		
+		pstmt=con.prepareStatement(InsStats+"where pid="+pid);
+		pstmt.setInt(1, hp);
+		pstmt.setInt(2, mp);
+		pstmt.setInt(3, patk);
+		pstmt.setInt(4, matk);
+		pstmt.setInt(5, def);
+		pstmt.setInt(6, rec);
+		pstmt.setInt(7, mob);		
+		
+		pstmt.executeUpdate();
+	}
+	
+	
+	//function for UNEQUIPPING armour
+	public static void unequipArmour(int pid, int wid) throws SQLException
+	{
+		switch(wid)
+		{
+		//1	transcendance: patk+20,def+15,recovery+20,sp+10,hp+45
+		case 1:
+			hp=-45;
+			mp=-10;
+			patk=-20;
+			matk=0;
+			def=-15;
+			rec=-20;
+			mob=0;
+		
+			break;
+			
+		//2	iron will: patk+10,def+40, mobility-10,recovery+10,sp+20, hp+25
+		case 2:
+			hp=-25;
+			mp=-20;
+			patk=-10;
+			matk=0;
+			def=-40;
+			rec=-10;
+			mob=10;
+
+			break;
+		
+		//3	armamentarium: patk+15,def+15,mobility+5,recovery+5, sp+15,hp+35
+		case 3:
+			hp=-35;
+			mp=-15;
+			patk=-15;
+			matk=0;
+			def=-15;
+			rec=-5;
+			mob=-5;
+
+			break;
+		
+		//4	hyperion:patk+30,matk+20, mobility+15,sp+15,hp+20
+		case 4:
+			hp=-20;
+			mp=-15;
+			patk=-30;
+			matk=-20;
+			def=0;
+			rec=0;
+			mob=-15;
+
+			break;
+		
+		//5	hallowfire:patk+20,mobility+15,recovery+20,sp+25,hp+25
+		case 5:
+			hp=-25;
+			mp=-25;
+			patk=-20;
+			matk=0;
+			def=0;
+			rec=-20;
+			mob=-15;
+
+			break;
+	
+		//6	actium:patk+10,mobility+10,recovery+10,def+15,sp+20,hp+15
+		case 6:
+			hp=-15;
+			mp=-20;
+			patk=-10;
+			matk=0;
+			def=-15;
+			rec=-10;
+			mob=-10;
+
+			break;
+			
+		//7	shadow stepper:patk+15,matk+10,mobility+40,sp+20,hp+10
+		case 7:
+			hp=-10;
+			mp=-20;
+			patk=-15;
+			matk=-10;
+			def=0;
+			rec=0;
+			mob=-40;
+
+			break;
+			
+		//8	dreambane:patk+15,matk+10, recovery+40,sp+30,hp+30
+		case 8:
+			hp=-30;
+			mp=-30;
+			patk=-15;
+			matk=-10;
+			def=0;
+			rec=-40;
+			mob=0;
+
+			break;
+			
+		//9	ophidia spathe:def+15, recovery+25, mobility+25, sp+25,hp+20
+		case 9:
+			hp=-20;
+			mp=-25;
+			patk=0;
+			matk=0;
+			def=-15;
+			rec=-25;
+			mob=-25;
+
+			break;
+			
+		//10	chromatic fire:matk+35,sp+15 recovery+25, hp+10
+		case 10:
+			hp=-10;
+			mp=-15;
+			patk=0;
+			matk=-35;
+			def=0;
+			rec=-25;
+			mob=0;
+
+			break;
+			
+		//11	phoenix protocol:matk+50, recovery+10,mobility-10,hp+15
+		case 11:
+			hp=-15;
+			mp=-50;
+			patk=0;
+			matk=0;
+			def=0;
+			rec=-10;
+			mob=10;
+			
+			break;
+			
+		//12	Sanguine Alchemy:matk+20,recovery+15,sp+30,mobility+5, hp+15
+		case 12:
+			hp=-15;
+			mp=-30;
+			patk=0;
+			matk=-20;
+			def=0;
+			rec=-15;
+			mob=-5;
+			
+			break;
+		default: break;
+		}
+		
+		pstmt=con.prepareStatement(InsStats+"where pid="+pid);
+		pstmt.setInt(1, hp);
+		pstmt.setInt(2, mp);
+		pstmt.setInt(3, patk);
+		pstmt.setInt(4, matk);
+		pstmt.setInt(5, def);
+		pstmt.setInt(6, rec);
+		pstmt.setInt(7, mob);		
+		
+		pstmt.executeUpdate();
 	}
 	
 	
 	//function for UNEQUIPPING weapons(- of the old values for equip weapons)
-	public static void unequipArmour(int pid, int wid) throws SQLException
+	public static void unequipWeapon(int pid, int wid) throws SQLException
 	{
 		switch(wid)
 		{
@@ -567,18 +833,8 @@ public class gameDB {
 			rec=0;
 			mob=-5;
 			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
 			break;
+
 			
 		//2.shadowsteel: patck+65,mp+5,mobility-5
 		case 2:
@@ -590,17 +846,6 @@ public class gameDB {
 			rec=0;
 			mob=5;
 			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
 			break;
 		
 		//3.battleaxe: patck+50,recovery+10
@@ -613,17 +858,6 @@ public class gameDB {
 			rec=-10;
 			mob=0;
 			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
 			break;
 		
 		//4.Duke mk: patk+30, mobility+5, mp+10
@@ -636,17 +870,6 @@ public class gameDB {
 			rec=-10;
 			mob=-5;
 			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
 			break;
 		
 		//5.smg: patk+15,mobility+15
@@ -659,17 +882,6 @@ public class gameDB {
 			rec=0;
 			mob=-15;
 			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
 			break;
 	
 		//6.Shotgun: patk+40, mobility-5,mp+10
@@ -682,17 +894,6 @@ public class gameDB {
 			rec=0;
 			mob=5;
 			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
 			break;
 			
 		//7.dagger:patk+25,magatk+15,mobility+15
@@ -705,17 +906,6 @@ public class gameDB {
 			rec=0;
 			mob=-15;
 			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
 			break;
 			
 		//8.blade:patk+15,magatk+25,mobility+15
@@ -728,17 +918,6 @@ public class gameDB {
 			rec=0;
 			mob=-15;
 			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
 			break;
 			
 		//9.HiddenBlade: patk+10, matk+10,mobility+25,recovery+10
@@ -751,17 +930,6 @@ public class gameDB {
 			rec=-10;
 			mob=-25;
 			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
 			break;
 			
 		//10.wand:spatk+20, recovery+35, mobility+10
@@ -774,17 +942,6 @@ public class gameDB {
 			rec=-35;
 			mob=-10;
 			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
 			break;
 			
 		//11.staff:spatk+45, recovery+10
@@ -797,17 +954,6 @@ public class gameDB {
 			rec=-10;
 			mob=0;
 			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
 			break;
 			
 		//12.spellcaster: spatk+30, mobility+15, recovery+15
@@ -820,19 +966,47 @@ public class gameDB {
 			rec=-15;
 			mob=-15;
 			
-			
-			pstmt=con.prepareStatement(InsStats+"where pid="+pid);
-			pstmt.setInt(1, hp);
-			pstmt.setInt(2, mp);
-			pstmt.setInt(3, patk);
-			pstmt.setInt(4, matk);
-			pstmt.setInt(5, def);
-			pstmt.setInt(6, rec);
-			pstmt.setInt(7, mob);		
-			
-			pstmt.executeUpdate();
 			break;
 		}
+		pstmt=con.prepareStatement(InsStats+"where pid="+pid);
+		pstmt.setInt(1, hp);
+		pstmt.setInt(2, mp);
+		pstmt.setInt(3, patk);
+		pstmt.setInt(4, matk);
+		pstmt.setInt(5, def);
+		pstmt.setInt(6, rec);
+		pstmt.setInt(7, mob);		
+		
+		pstmt.executeUpdate();
 	}
 	
+	
+	//function for updating values by level
+	public static void updateLevel(int pid, int oldlvl, int newlvl) throws SQLException
+	{
+		int pid1=pid;
+		int change=(newlvl-oldlvl)*2;
+		hp=change;
+		mp=change;
+		patk=change;
+		matk=change;
+		def=change;
+		rec=change;
+		mob=change;
+		pstmt=con.prepareStatement(InsStats+"where pid="+pid1);
+		pstmt.setInt(1, hp);
+		pstmt.setInt(2, mp);
+		pstmt.setInt(3, patk);
+		pstmt.setInt(4, matk);
+		pstmt.setInt(5, def);
+		pstmt.setInt(6, rec);
+		pstmt.setInt(7, mob);		
+		
+		pstmt.executeUpdate();
+	}
+
 }
+
+//SELECT playerid,level,cname,wname,aname, maxhp, maxmp, phys_attack, magic_attack, defence, recovery,mobility
+//from player, class, weapons,armour,stats
+//where playerid=pid and classid=cid and weaponid=wid and armourid=aid;

@@ -979,6 +979,32 @@ public class gameDB {
 		
 		pstmt.executeUpdate();
 	}
+	
+	
+	//function for updating values by level
+	public static void updateLevel(int pid, int oldlvl, int newlvl) throws SQLException
+	{
+		int pid1=pid;
+		int change=(newlvl-oldlvl)*2;
+		hp=change;
+		mp=change;
+		patk=change;
+		matk=change;
+		def=change;
+		rec=change;
+		mob=change;
+		pstmt=con.prepareStatement(InsStats+"where pid="+pid1);
+		pstmt.setInt(1, hp);
+		pstmt.setInt(2, mp);
+		pstmt.setInt(3, patk);
+		pstmt.setInt(4, matk);
+		pstmt.setInt(5, def);
+		pstmt.setInt(6, rec);
+		pstmt.setInt(7, mob);		
+		
+		pstmt.executeUpdate();
+	}
+
 }
 
 //SELECT playerid,level,cname,wname,aname, maxhp, maxmp, phys_attack, magic_attack, defence, recovery,mobility

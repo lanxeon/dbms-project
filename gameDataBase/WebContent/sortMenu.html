@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Sorting</title>
+</head>
+<body>
+<form method='post' action='sortBy.jsp'>
+<h4>Sort by:</h4>
+<select name="order">
+	<option value="ASC">Lowest to highest</option>
+	<option value="DESC">Highest to lowest</option> 
+</select><br/>
+<h4>What would you like to sort?</h4>
+	<input type="radio" name="field" value="username"/>Username(Alphabetical)<br/>
+	<input type="radio" name="field" value="level"/>Level<br/>
+	<input type="radio" name="field" value="maxhp"/>Max HP<br/>
+	<input type="radio" name="field" value="maxmp"/>Max MP<br/>
+	<input type="radio" name="field" value="phys_attack"/>Physical Attack<br/>
+	<input type="radio" name="field" value="magic_attack"/>Magic Attack<br/>
+	<input type="radio" name="field" value="defence"/>Defense<br/>
+	<input type="radio" name="field" value="recovery"/>Recovery<br/>
+	<input type="radio" name="field" value="mobility"/>Mobility<br/>
+<input type="submit" value="GO"/>
+</form>
+</body>
+</html>

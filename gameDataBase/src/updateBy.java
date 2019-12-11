@@ -35,6 +35,7 @@ public class updateBy extends HttpServlet {
 		String field=request.getParameter("field");
 		String pid=request.getParameter("pid");
 		String newValue=request.getParameter("value");
+		int found=0;
 		try {
 		new gameDB();
 		if(field.equals("level"))
@@ -46,11 +47,29 @@ public class updateBy extends HttpServlet {
 			int pid1=Integer.parseInt(pid);
 			int newValue1=Integer.parseInt(newValue);
 			gameDB.updateLevel(pid1,oldValue,newValue1);
+			gameDB.stmt.execute("Update player set "+field+"="+newValue+" where playerid="+pid);
 		}
-		gameDB.stmt.execute("Update player set "+field+"="+newValue+" where playerid="+pid);
+		else {
+			gameDB.rs=gameDB.stmt.executeQuery("select username from player");
+			while(gameDB.rs.next())
+				if(gameDB.rs.getString(1).equals(newValue))
+					{found=1; break;}
+			if(found==1)
+			{
+				response.setContentType("text/html");
+				PrintWriter pw=response.getWriter();//make sure to import PrintWriter as well
+				pw.println("<b><font color='red'>User already taken. Please Insert values again</font></b></br>");
+				RequestDispatcher rd= request.getRequestDispatcher("updateMenu.jsp");
+				rd.include(request, response);
+			}
+			else
+				gameDB.stmt.execute("Update player set "+field+"='"+newValue+"' where playerid="+pid);
+		}
+		if(found==0) {
 		gameDB.con.commit();
 		response.sendRedirect("http://localhost:8080/gameDataBase/getPlayers");
-		}catch(SQLException e) {}
+		}
+		}catch(SQLException e) {e.printStackTrace();}
 	}
 
 }
